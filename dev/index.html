@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Home · RunLengthArrays.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link href="assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>RunLengthArrays.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li class="current"><a class="toctext" href>Home</a><ul class="internal"><li><a class="toctext" href="#Creating-an-array-1">Creating an array</a></li><li><a class="toctext" href="#Operations-on-run-length-arrays-1">Operations on run-length arrays</a></li><li><a class="toctext" href="#Modifying-run-length-arrays-1">Modifying run-length arrays</a></li><li><a class="toctext" href="#API-documentation-1">API documentation</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li><a href>Home</a></li></ul><a class="edit-page" href="https://github.com/ziotom78/RunLengthArrays.jl/blob/master/docs/src/index.md#L"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Home</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="RunLengthArrays.jl-1" href="#RunLengthArrays.jl-1">RunLengthArrays.jl</a></h1><p>This small Julia package implements a new type, <a href="#RunLengthArrays.RunLengthArray"><code>RunLengthArray{N,T}</code></a>, that efficiently encodes an array containing long sequences of repeated values, like the following example:</p><p>6 6 6 6 4 4 4 4 4 4 4 10 10 10 10 10 10 …</p><p>The <a href="#RunLengthArrays.RunLengthArray"><code>RunLengthArray{N,T}</code></a> type uses a <a href="https://en.wikipedia.org/wiki/Run-length_encoding">run-length encoding</a> algorithm.</p><p>The following program shows its usage:</p><pre><code class="language-julia">original = Int64[3, 3, 3, 7, 7, 7, 7];
+compressed = CMBSim.RunLengthArray{Int,Int64}(original);
+
+for elem in compressed:
+    println(elem)
+end
+
+println(&quot;The sum of the elements is &quot;, sum(compressed))
+println(&quot;The 3rd element is &quot;, compressed[3])
+
+push!(compressed, 7)</code></pre><p>The type <code>RunLengthArray</code> derives from <code>AbstractArray</code>.</p><h2><a class="nav-anchor" id="Creating-an-array-1" href="#Creating-an-array-1">Creating an array</a></h2><p>You can create an instance of <a href="#RunLengthArrays.RunLengthArray"><code>RunLengthArray{N,T}</code></a> using one of its three constructors:</p><ul><li>You can call the constructor without parameters; in this case, the array will be empty. You can fill it later using <code>push!</code> and <code>append!</code>.</li><li>You can pass an array, which will be compressed;</li><li>You can pass two arrays, containing the length and value of each run respectively.</li></ul><p>The types <code>N</code> and <code>T</code> encode the types of the counter and of the value, respectively.</p><p>The third constructor is the most interesting. Suppose that you want to store a sequence containing four instances of the number 4.6, followed by five instances of the number 5.7:</p><pre><code class="language-none">4.6 4.6 4.6 4.6   5.7 5.7 5.7 5.7 5.7</code></pre><p>You can achieve this result using one of the two following forms:</p><pre><code class="language-julia"># Second constructor
+x = RunLengthArray{Int,Float64}([4.6, 4.6, 4.6, 4.6, 5.7, 5.7, 5.7, 5.7, 5.7])
+
+# Third constructor (preferred in this case)
+y = RunLengthArray{Int,Float64}([4, 5], [4.6, 5.7])</code></pre><h2><a class="nav-anchor" id="Operations-on-run-length-arrays-1" href="#Operations-on-run-length-arrays-1">Operations on run-length arrays</a></h2><p>The package defines specialized versions of a few functions in Julia&#39;s library, in order to make them more efficient. Here is a list of them:</p><ul><li><code>sum</code></li><li><code>minimum</code></li><li><code>maximum</code></li><li><code>extrema</code></li><li><code>sort</code></li><li><code>sort!</code></li></ul><p>Calling this functions to run-length arrays can be significantly faster. Here is an example:</p><pre><code class="language-none">julia&gt; compr = RunLengthArray{Int, Float64}([100000, 200000], [1.1, 6.6]);
+
+julia&gt; uncompr = collect(compr);
+
+julia&gt; @benchmark minimum(compr)
+BenchmarkTools.Trial: 
+  memory estimate:  16 bytes
+  allocs estimate:  1
+  --------------
+  minimum time:     37.372 ns (0.00% GC)
+  median time:      39.660 ns (0.00% GC)
+  mean time:        48.777 ns (14.87% GC)
+  maximum time:     52.816 μs (99.91% GC)
+  --------------
+  samples:          10000
+  evals/sample:     992
+
+julia&gt; @benchmark minimum(uncompr)
+BenchmarkTools.Trial: 
+  memory estimate:  16 bytes
+  allocs estimate:  1
+  --------------
+  minimum time:     751.926 μs (0.00% GC)
+  median time:      776.371 μs (0.00% GC)
+  mean time:        788.463 μs (0.00% GC)
+  maximum time:     1.094 ms (0.00% GC)
+  --------------
+  samples:          6326
+  evals/sample:     1</code></pre><h2><a class="nav-anchor" id="Modifying-run-length-arrays-1" href="#Modifying-run-length-arrays-1">Modifying run-length arrays</a></h2><p>There are only three operations that can modify a run-length array:</p><ul><li><code>push!</code> (add an element or a run to the end of the array);</li><li><code>append!</code> (add a sequence to the end of the array);</li><li><code>sort!</code> (sort the array in-place).</li></ul><p>The <code>push!</code> function can be used in two ways:</p><ul><li>Passing one value of type <code>T</code> will append it to the end of the array;</li><li>Passing a tuple with type <code>Tuple{N,T}</code> will append a run to the end of the array.</li></ul><p>Here is an example:</p><pre><code class="language-julia">x = RunLengthArray{Int, Float64}()
+push!(x, (4, 1.1))
+push!(x, (6, 2.2))
+
+# The above array is equal to the following:
+y = RunLengthArray{Int, Float64}([4, 6], [1.1, 2.2])</code></pre><h2><a class="nav-anchor" id="API-documentation-1" href="#API-documentation-1">API documentation</a></h2><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="RunLengthArrays.RunLengthArray" href="#RunLengthArrays.RunLengthArray"><code>RunLengthArrays.RunLengthArray</code></a> — <span class="docstring-category">Type</span>.</div><div><div><p>An array of objects of type <code>T</code> encoded using run-length compression.</p><p>This works like an array, but it is designed to be extremely efficient when the array is long and consists of long repetitions («runs») of the same elements. The length of each run is held using type <code>N</code>; this type should be chosen according to the expected maximum length of a run.</p><p>Once a <code>RunLengthArray</code> has been created, new elements can be added only at the end of it, using <code>push!</code> (add one element) or <code>append!</code> (add a sequence of elements).</p><pre><code class="language-julia">arr = RunLengthArray{Int, Int8}(Int8[3, 3, 3, 7, 7, 7, 7, 7, 7, 4])
+
+longarr = collect(arr)
+
+@assert length(arr) == 10
+@assert sum(arr) == 30
+@assert arr[1] == 3
+@assert arr[2] == 3
+
+println(&quot;$(sizeof(arr))&quot;)  # Prints 16 (bytes)
+println(&quot;$(sizeof(longarr))&quot;)  # Prints 56 (bytes)</code></pre></div></div><a class="source-link" target="_blank" href="https://github.com/ziotom78/RunLengthArrays.jl/blob/51cfa0ea91d1f67ff589149a0c5afa1eda9aefd0/src/RunLengthArrays.jl#LL7-L33">source</a></section><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="Base.append!-Union{Tuple{T}, Tuple{N}, Tuple{RunLengthArray{N,T},Any}} where T where N" href="#Base.append!-Union{Tuple{T}, Tuple{N}, Tuple{RunLengthArray{N,T},Any}} where T where N"><code>Base.append!</code></a> — <span class="docstring-category">Method</span>.</div><div><div><pre><code class="language-julia">append!(arr::RunLengthArray{N,T}, otherarray)</code></pre><p>Append an array to a <code>RunLengthArray</code>, modifying it in place.</p></div></div><a class="source-link" target="_blank" href="https://github.com/ziotom78/RunLengthArrays.jl/blob/51cfa0ea91d1f67ff589149a0c5afa1eda9aefd0/src/RunLengthArrays.jl#LL206-L211">source</a></section><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="Base.push!" href="#Base.push!"><code>Base.push!</code></a> — <span class="docstring-category">Function</span>.</div><div><div><pre><code class="language-julia">push!(arr::RunLengthArray{N,T}, newval::T) where {N &lt;: Number,T}
+push!(arr::RunLengthArray{N,T}, newrun::Tuple{N,T}) where {N &lt;: Number,T}</code></pre><p>Append a element or a run of elements to the end of a <code>RunLengthArray</code>. In the second case, the parameter <code>newrun</code> must be a tuple containing the number of repetitions <code>n</code> and the value <code>v</code>: <code>(n, v)</code>.</p><pre><code class="language-julia">arr = RunLengthArray{Int, Float64}([3, 2], [1.1, 6.5])
+@assert length(arr) == 5
+
+# Add 6 instances of the number &quot;1.4&quot; at the end of the array
+push!(arr, (6, 1.4))
+
+@assert length(arr) == 11
+Base.push!</code></pre><p>`</p></div></div><a class="source-link" target="_blank" href="https://github.com/ziotom78/RunLengthArrays.jl/blob/51cfa0ea91d1f67ff589149a0c5afa1eda9aefd0/src/RunLengthArrays.jl#LL182-L201">source</a></section><h3><a class="nav-anchor" id="Index-1" href="#Index-1">Index</a></h3><ul><li><a href="#RunLengthArrays.RunLengthArray"><code>RunLengthArrays.RunLengthArray</code></a></li><li><a href="#Base.append!-Union{Tuple{T}, Tuple{N}, Tuple{RunLengthArray{N,T},Any}} where T where N"><code>Base.append!</code></a></li><li><a href="#Base.push!"><code>Base.push!</code></a></li></ul><footer><hr/></footer></article></body></html>
