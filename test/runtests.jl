@@ -4,6 +4,9 @@ using Test
 original = Int8[3, 3, 3, 7, 7, 7, 7, 7, 7, 4]
 compressed = RunLengthArray{Int,Int8}(original)
 
+@test runs(compressed) == Int[3, 6, 1]
+@test values(compressed) == Int8[3, 7, 4]
+
 ##################################################################################
 # Check that the original array and the compressed array behave identically
 
