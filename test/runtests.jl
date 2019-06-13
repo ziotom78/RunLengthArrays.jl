@@ -1,11 +1,26 @@
 using RunLengthArrays
 using Test
 
+empty_array = RunLengthArray{Int,String}()
+@test isempty(empty_array)
+
+##################################################################################
+
 original = Int8[3, 3, 3, 7, 7, 7, 7, 7, 7, 4]
 compressed = RunLengthArray{Int,Int8}(original)
 
 @test runs(compressed) == Int[3, 6, 1]
 @test values(compressed) == Int8[3, 7, 4]
+
+##################################################################################
+# Check that looping works
+
+total = Int8(0)
+for elem in compressed
+    global total
+    total += elem
+end
+@test total == sum(original)
 
 ##################################################################################
 # Check that the original array and the compressed array behave identically
