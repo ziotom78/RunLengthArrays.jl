@@ -88,11 +88,12 @@ end
 function Base.show(io::IO, arr::RunLengthArray{N,T}) where {N,T}
     print(io, "RunLengthArray{$N,$T}([")
     for elem in eachindex(arr.runs)
-        print("$(arr.values[elem])×$(arr.runs[elem])")
+        print(io, "$(arr.values[elem])×$(arr.runs[elem])")
         if elem < length(arr.runs)
-            print(", ")
+            print(io, ", ")
         end
     end
+    println(io, "])")
 end
 
 ################################################################################
